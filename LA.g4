@@ -1,6 +1,9 @@
 lexer grammar LA;
 
-SELF: 'algoritmo'|'declare'|':'|'escreva'|'literal'|'inteiro'|'leia'|'('|')'|','|'fim_algoritmo';
+SELF: 'algoritmo'|'declare'|':'|'escreva'|
+    'literal'|'inteiro'|'leia'|'('|')'|','|'fim_algoritmo'| 
+    '>' | '>=' | '<' | '<=' | '<>' | '='| 'real' |'<-'|
+    '+' | '-' | '*' | '/';
 
 
 CADEIA     : '"' ( ESC_SEQ | ~('"'|'\\') )* '"';
@@ -9,14 +12,15 @@ ESC_SEQ    : '\\"';
 
 COMENTARIO:'{'  ('\\}'|~('}'|'\\'))* '}';
 
-IDENT: [a-z]+;
+NUM_INT	: ('+'|'-')?('0'..'9')+;
+
+NUM_REAL	: ('+'|'-')?('0'..'9')+ ('.' ('0'..'9')+)?;
+
+IDENT: ([a-z])([a-zA-Z]|[0-9])*;
+
 WS  :   ( ' '
         | '\t'
         | '\r'
         | '\n'
         ) 
     ;
-OP_REL	:	'>' | '>=' | '<' | '<=' | '<>' | '='
-	;
-OP_ARIT	:	'+' | '-' | '*' | '/'
-	;
