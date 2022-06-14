@@ -1,3 +1,4 @@
 
 *.pyc
 antlr-4.10.1-complete.jar
+.venv/*
