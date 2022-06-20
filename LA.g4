@@ -13,7 +13,7 @@ SELF: 'algoritmo'|'declare'|':'|'escreva'|
 CADEIA: '"' ( ESC_SEQ | ~('"'|'\\') )* '"';
 fragment ESC_SEQ: '\\"';
 
-COMENTARIO: '{' ('\\}' | ~('}' | '\\'))* '}';
+COMENTARIO: '{' ('\\}' | ~('}' | '{' |'\\'))* '}';
 
 NUM_INT: /*('+' | '-')?*/ ('0'..'9')+;
 
