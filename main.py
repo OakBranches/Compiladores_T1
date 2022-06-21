@@ -1,41 +1,58 @@
 import sys
 from antlr4 import *
-from LA import LA as OLA
+from antlr4.error.ErrorListener import ErrorListener
+from LA import LA
 
 
-class LA(OLA):
-    def __init__(self, file, input=None, output = sys.stdout):
-        self.file = file
-        super().__init__(input, output)
+class LexerError(Exception):
+    pass
 
-    def notifyListeners(self, e):
-        start = self._tokenStartCharIndex
-        stop = self._input.index
-        text = self._input.getText(start, stop)
-        invalidToken = self.getErrorDisplay(text)
-        if invalidToken[0] == '{':
-            msg = f"Linha {self._tokenStartLine}: comentario nao fechado\n"
+
+class LAErrorListener(ErrorListener):
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        # Constrói uma exceção a partir do erro e levanta para cima.
+        ch = str(e.input)[e.startIndex]
+        if ch == '"':
+            raise LexerError(f'Linha {line}: cadeia literal nao fechada')
+        elif ch == '{':
+            raise LexerError(f'Linha {line}: comentario nao fechado')
         else:
-            msg = f"Linha {self._tokenStartLine}: {invalidToken} - simbolo nao identificado\n"
-        self.file.write(msg)
-        self._hitEOF = True
+            raise LexerError(f'Linha {line}: {ch} - simbolo nao identificado')
 
 
 def main(argv):
-    input_stream = FileStream(argv[1], encoding='utf-8')
-    f = open(argv[2], "w")
-    lexer = LA(f, input_stream)
-    t : Lexer = lexer.nextToken()
-    while t.type != -1:
-        if t.type == 1: 
-            f.write(f'<\'{t.text}\',\'{t.text}\'>\n')
-        elif LA.symbolicNames[t.type] != 'WS' and LA.symbolicNames[t.type] != 'COMENTARIO':
-            f.write(f'<\'{t.text}\',{LA.symbolicNames[t.type]}>\n')
-        
-        t = lexer.nextToken()
-    f.close()
+    # Lê os argumentos e os arquivos.
+    _, input_path, output_path = argv
+    infile = FileStream(input_path, encoding='utf-8')
+    outfile = open(output_path, 'w')
+    
+    # lexer = LA(infile)
+    lexer = LA(infile)
+
+    # Remove o tratador padrão.
+    lexer.removeErrorListeners()
+
+    # Insere o nosso tratador.
+    lexer.addErrorListener(LAErrorListener())
+
+    try:
+        # Lê cada token.
+        while (t := lexer.nextToken()).type != -1:
+            if t.type == 1:
+                # Palavra-chave
+                outfile.write(f'<\'{t.text}\',\'{t.text}\'>')
+            else:
+                # Outros
+                outfile.write(f'<\'{t.text}\',{LA.symbolicNames[t.type]}>')
+            outfile.write('\n')
+    except LexerError as e:
+        # Reporta o erro no arquivo.
+        outfile.write(str(e))
+        outfile.write('\n')
+
+    # outfile.close()
+    outfile.close()
 
 
 if __name__ == '__main__':
     main(sys.argv)
-
