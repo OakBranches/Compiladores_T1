@@ -27,6 +27,7 @@ class ParserError(Exception):
 
 class LAParserErrorListener(ErrorListener):
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        # Constrói uma exceção a partir do erro e levanta para cima.
         line = offendingSymbol.line
         text = offendingSymbol.text
         if text == '<EOF>':
@@ -54,6 +55,7 @@ def main(argv):
     parser.addErrorListener(LAParserErrorListener())
 
     try:
+        # Pede para o parser ler um programa.
         parser.programa()
     except ParserError as e:
         # Reporta o erro no arquivo.
@@ -64,7 +66,7 @@ def main(argv):
         outfile.write(str(e))
         outfile.write('\nFim da compilacao\n')
 
-    # outfile.close()
+    # Fecha o arquivo de saída.
     outfile.close()
 
 
