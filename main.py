@@ -1,14 +1,15 @@
 import sys
 from antlr4 import *
 from antlr4.error.ErrorListener import ErrorListener
-from LA import LA
+from LALexer import LALexer
+from LAParser import LAParser
 
 
 class LexerError(Exception):
     pass
 
 
-class LAErrorListener(ErrorListener):
+class LALexerErrorListener(ErrorListener):
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
         # Constrói uma exceção a partir do erro e levanta para cima.
         ch = str(e.input)[e.startIndex]
@@ -20,35 +21,48 @@ class LAErrorListener(ErrorListener):
             raise LexerError(f'Linha {line}: {ch} - simbolo nao identificado')
 
 
+class ParserError(Exception):
+    pass
+
+
+class LAParserErrorListener(ErrorListener):
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        line = offendingSymbol.line
+        text = offendingSymbol.text
+        if text == '<EOF>':
+            text = 'EOF'
+        raise ParserError(f'Linha {line}: erro sintatico proximo a {text}')
+
+
 def main(argv):
     # Lê os argumentos e os arquivos.
     _, input_path, output_path = argv
     infile = FileStream(input_path, encoding='utf-8')
     outfile = open(output_path, 'w')
     
-    # lexer = LA(infile)
-    lexer = LA(infile)
+    # Cria o lexer e o parser.
+    lexer = LALexer(infile)
+    stream = CommonTokenStream(lexer)
+    parser = LAParser(stream)
 
-    # Remove o tratador padrão.
+    # Remove os tratadores padrão.
     lexer.removeErrorListeners()
+    parser.removeErrorListeners()
 
-    # Insere o nosso tratador.
-    lexer.addErrorListener(LAErrorListener())
+    # Insere os nossos tratadores.
+    lexer.addErrorListener(LALexerErrorListener())
+    parser.addErrorListener(LAParserErrorListener())
 
     try:
-        # Lê cada token.
-        while (t := lexer.nextToken()).type != -1:
-            if t.type == 1:
-                # Palavra-chave
-                outfile.write(f'<\'{t.text}\',\'{t.text}\'>')
-            else:
-                # Outros
-                outfile.write(f'<\'{t.text}\',{LA.symbolicNames[t.type]}>')
-            outfile.write('\n')
+        parser.programa()
+    except ParserError as e:
+        # Reporta o erro no arquivo.
+        outfile.write(str(e))
+        outfile.write('\nFim da compilacao\n')
     except LexerError as e:
         # Reporta o erro no arquivo.
         outfile.write(str(e))
-        outfile.write('\n')
+        outfile.write('\nFim da compilacao\n')
 
     # outfile.close()
     outfile.close()
