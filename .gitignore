@@ -2,7 +2,6 @@
 *.pyc
 antlr-4.10.1-complete.jar
 .venv/*
-1.casos_teste_t1/*
 casos-de-teste/*
 .antlr/*
 .vscode/*
