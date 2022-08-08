@@ -1,9 +1,9 @@
 import sys
 from antlr4 import *
 from antlr4.error.ErrorListener import ErrorListener
-from LALexer import LALexer
-from LAParser import LAParser
-from LASemantico import LASemantico
+from T1.LALexer import LALexer
+from T1.LAParser import LAParser
+from T1.LASemantico import LASemantico
 
 
 class LexerError(Exception):
@@ -62,6 +62,7 @@ def main(argv):
     try:
         # Pede para o parser ler um programa.
         parser.programa()
+        print(listener.tss)
         # Reporta erros.
         outfile.write('\n'.join(listener.errors))
         outfile.write('\nFim da compilacao\n')
