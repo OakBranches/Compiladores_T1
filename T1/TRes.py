@@ -34,7 +34,7 @@ def walk_tipo_basico_ident(ts: TS, ctx: LA.Tipo_basico_identContext) -> Tipo:
         raise TypeResolutionError(f'Linha {line}: tipo {tstr} nao declarado')
 
 def walk_tipo_estendido(ts: TS, ctx: LA.Tipo_estendidoContext) -> Tipo:
-    if ctx.getText()[:1] == '^': # TODO Não sei se essa é a melhor ideia.
+    if ctx.getText()[0] == '^': # TODO Não sei se essa é a melhor ideia.
         return Ponteiro(walk_tipo_basico_ident(ts, ctx.tipo_basico_ident()))
     else:
         return walk_tipo_basico_ident(ts, ctx.tipo_basico_ident())
@@ -42,7 +42,7 @@ def walk_tipo_estendido(ts: TS, ctx: LA.Tipo_estendidoContext) -> Tipo:
 def bw_dimensao(ts: TS, ctx: LA.DimensaoContext, tipo: Tipo) -> Tipo:
     for exp_aritmetica in ctx.exp_aritmetica():
         dim = Expr.walk_exp_aritmetica(ts, exp_aritmetica)
-        if not isinstance(dim, Inteiro) or not dim.valor:
+        if not is_inteiro(dim) or not dim.valor:
             raise TypeResolutionError('Dimensão não é um inteiro')
         elif not dim.valor:
             raise TypeResolutionError('Dimensão não é conhecida no tempo de '

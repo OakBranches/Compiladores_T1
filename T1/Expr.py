@@ -13,27 +13,27 @@ class ExpressionTypeError(Exception):
 
 def chk_arith(ta: Tipo, op: str, tb: Tipo) -> Tipo:
     if op.getText() == '+':
-        if isinstance(ta, Inteiro) and isinstance(tb, Inteiro):
+        if is_inteiro(ta) and is_inteiro(tb):
             if ta.valor and tb.valor:
                 return Inteiro(ta.valor + tb.valor)
             else:
                 return Inteiro(None)
-        elif isinstance(ta, Aritmético) and isinstance(tb, Aritmético):
+        elif is_aritmético(ta) and is_aritmético(tb):
             if ta.valor and tb.valor:
                 return Real(ta.valor + tb.valor)
             else:
                 return Real(None)
-        elif isinstance(ta, Literal) and isinstance(tb, Literal):
+        elif is_literal(ta) and is_literal(tb):
             return Literal()
         else:
             raise ExpressionTypeError
     elif op.getText() == '-':
-        if isinstance(ta, Inteiro) and isinstance(tb, Inteiro):
+        if is_inteiro(ta) and is_inteiro(tb):
             if ta.valor and tb.valor:
                 return Inteiro(ta.valor - tb.valor)
             else:
                 return Inteiro(None)
-        elif isinstance(ta, Aritmético) and isinstance(tb, Aritmético):
+        elif is_aritmético(ta) and is_aritmético(tb):
             if ta.valor and tb.valor:
                 return Real(ta.valor - tb.valor)
             else:
@@ -41,12 +41,12 @@ def chk_arith(ta: Tipo, op: str, tb: Tipo) -> Tipo:
         else:
             raise ExpressionTypeError
     elif op.getText() == '*':
-        if isinstance(ta, Inteiro) and isinstance(tb, Inteiro):
+        if is_inteiro(ta) and is_inteiro(tb):
             if ta.valor and tb.valor:
                 return Inteiro(ta.valor * tb.valor)
             else:
                 return Inteiro(None)
-        elif isinstance(ta, Aritmético) and isinstance(tb, Aritmético):
+        elif is_aritmético(ta) and is_aritmético(tb):
             if ta.valor and tb.valor:
                 return Real(ta.valor * tb.valor)
             else:
@@ -54,7 +54,7 @@ def chk_arith(ta: Tipo, op: str, tb: Tipo) -> Tipo:
         else:
             raise ExpressionTypeError
     elif op.getText() == '/':
-        if isinstance(ta, Aritmético) and isinstance(tb, Aritmético):
+        if is_aritmético(ta) and is_aritmético(tb):
             if ta.valor and tb.valor:
                 return Real(ta.valor / tb.valor)
             else:
@@ -62,12 +62,12 @@ def chk_arith(ta: Tipo, op: str, tb: Tipo) -> Tipo:
         else:
             raise ExpressionTypeError
     elif op.getText() == '%':
-        if isinstance(ta, Inteiro) and isinstance(tb, Inteiro):
+        if is_inteiro(ta) and is_inteiro(tb):
             if ta.valor and tb.valor:
                 return Inteiro(ta.valor % tb.valor)
             else:
                 return Inteiro(None)
-        elif isinstance(ta, Aritmético) and isinstance(tb, Aritmético):
+        elif is_aritmético(ta) and is_aritmético(tb):
             if ta.valor and tb.valor:
                 return Real(fmod(ta.valor, tb.valor))
             else:
@@ -76,7 +76,7 @@ def chk_arith(ta: Tipo, op: str, tb: Tipo) -> Tipo:
             raise ExpressionTypeError
 
 def chk_neg(t: Tipo) -> Tipo:
-    if isinstance(t, Aritmético):
+    if is_aritmético(t):
         if t.valor:
             return type(t)(-t.valor)
         else:
@@ -85,7 +85,7 @@ def chk_neg(t: Tipo) -> Tipo:
         raise ExpressionTypeError
 
 def chk_rel(ta: Tipo, op: str, tb: Tipo) -> Tipo:
-    if isinstance(ta, Aritmético) and isinstance(tb, Aritmético):
+    if is_aritmético(ta) and is_aritmético(tb):
         return Lógico()
     elif op.getText() in ['=', '<>'] and ta == tb:
         return Lógico()
@@ -93,32 +93,32 @@ def chk_rel(ta: Tipo, op: str, tb: Tipo) -> Tipo:
         raise ExpressionTypeError
 
 def chk_bool(ta: Tipo, _, tb: Tipo) -> Tipo:
-    if isinstance(ta, Lógico) and isinstance(tb, Lógico):
+    if is_lógico(ta) and is_lógico(tb):
         return Lógico()
     else:
         raise ExpressionTypeError
 
 def chk_not(t: Tipo) -> Tipo:
-    if isinstance(t, Lógico):
+    if is_lógico(t):
         return Lógico()
     else:
         raise ExpressionTypeError
 
 def chk_attr(t: Tipo, name: str) -> Tipo:
-    if isinstance(t, Registro) and t.campos.get(name):
+    if is_registro(t) and t.campos.get(name):
         return t.campos[name]
     else:
         raise ExpressionTypeError
 
 def chk_index(ta: Tipo, tb: Tipo) -> Tipo:
-    if isinstance(ta, Vetor) and isinstance(tb, Aritmético):
+    if is_vetor(ta) and is_aritmético(tb):
         return ta.interno
     else:
         raise ExpressionTypeError
 
 def chk_call(f: Tipo, t: Tipo) -> Tipo:
-    if isinstance(f, Função) and f.entrada == t:
-        if isinstance(f.saída, Void):
+    if is_função(f) and f.entrada == t:
+        if is_void(f.saída):
             raise ExpressionTypeError
         else:
             return f.saída
@@ -139,24 +139,25 @@ def walk_identificador(ts: TS, ctx: LA.IdentificadorContext) -> Tipo:
         line = ctx.IDENT()[0].symbol.line
         nomeVar = ctx.IDENT()[0].getText()
         if not ts.obter_variavel(nomeVar):
-            msg = f'Linha {line}: identificador {nomeVar} nao declarado'
+            msg = f'Linha {line}: identificador {ctx.getText()} nao declarado'
             raise ExpressionTypeError(msg)
         # Tipo do identificador
         out = walk_ident(ts, nomeVar)
         # Resolver campos
         for ident in ctx.IDENT()[1:]:
-            if not isinstance(out, Registro):
+            if not is_registro(out):
                 raise ExpressionTypeError(f'Linha {line}: tentou indexar um não-registro')
             if out.campos.get(ident.getText()):
                 out = out.campos[ident.getText()]
             else:
-                raise ExpressionTypeError(f'Linha {line}: tentou indexar um campo que não existe')
+                # raise ExpressionTypeError(f'Linha {line}: tentou indexar um campo que não existe')
+                raise ExpressionTypeError(f'Linha {line}: identificador {ctx.getText()} nao declarado')
         # Resolver índices
         for exp_aritmetica in ctx.dimensao().exp_aritmetica():
             indice = walk_exp_aritmetica(ts, exp_aritmetica)
-            if not isinstance(indice, Inteiro):
+            if not is_inteiro(indice):
                 raise ExpressionTypeError(f'Linha {line}: tentou indexar com um não-inteiro')
-            if not isinstance(out, Vetor):
+            if not is_vetor(out):
                 raise ExpressionTypeError(f'Linha {line}: tentou indexar um não-vetor')
             out = out.interno
         return out
@@ -179,17 +180,29 @@ def walk_parcela_unario(ts: TS, ctx: LA.Parcela_unarioContext) -> Tipo:
     elif ctx.NUM_REAL():
         return Real(float(ctx.NUM_REAL().getText()))
     elif ctx.IDENT():
-        # TODO Chamadas não funcionam ainda
-        nomeVar = ctx.IDENT().getText()
-        if not ts.obter_variavel(nomeVar):
-            raise ExpressionTypeError
-        return walk_ident(ts, nomeVar)
+        simbolo = ctx.IDENT().getText()
+        line = ctx.IDENT().symbol.line
+        tipo = ts.obter_variavel(ctx.IDENT().getText())
+        if not is_função(tipo):
+            raise ExpressionTypeError('tentou chamar uma não-função')
+        if is_void(tipo.saída):
+            raise ExpressionTypeError('tentou chamar um procedimento na '
+                                      'expressão')
+        entrada = []
+        for expressao in ctx.expressao():
+            entrada.append(walk_expressao(ts, expressao))
+        if entrada != tipo.entrada:
+            raise ExpressionTypeError(f'Linha {line}: incompatibilidade de '
+                                      f'parametros na chamada de {simbolo}')
+        return tipo.saída
     else:
         return walk_expressao(ts, ctx.expressao()[0])
 
 def walk_parcela_nao_unario(ts: TS, ctx: LA.Parcela_nao_unarioContext) -> Tipo:
     if ctx.CADEIA():
         return Literal()
+    elif ctx.getText()[0] == '&': # TODO Não sei se essa é a melhor ideia.
+        return Ponteiro(walk_identificador(ts, ctx.identificador()))
     else:
         return walk_identificador(ts, ctx.identificador())
 

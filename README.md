@@ -36,7 +36,7 @@ abaixo vai gerar o mesmo ambiente novamente.
 
 # Como gerar o ambiente
 ```bash
-antlr4 LA.g4 -Dlanguage=Python3
+antlr4 -Dlanguage=Python3 -no-listener -visitor LA.g4
 ```
 
 # Execução do programa

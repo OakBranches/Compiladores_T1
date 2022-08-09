@@ -55,16 +55,13 @@ def main(argv):
     lexer.addErrorListener(LALexerErrorListener())
     parser.addErrorListener(LAParserErrorListener())
 
-    # Insere nosso ouvinte.
-    listener = LASemantico()
-    parser.addParseListener(listener)
-
     try:
         # Pede para o parser ler um programa.
-        parser.programa()
-        print(listener.tss)
+        visitor = LASemantico()
+        visitor.visitPrograma(parser.programa())
+        print(visitor.tss)
         # Reporta erros.
-        outfile.write('\n'.join(listener.errors))
+        outfile.write('\n'.join(visitor.errors))
         outfile.write('\nFim da compilacao\n')
     except ParserError as e:
         # Reporta o erro no arquivo.
