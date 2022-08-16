@@ -66,6 +66,8 @@ class LASemantico(LAVisitor):
         self.tss = [ TabelaDeSimbolos({}) ]
         self.scope = []
         self.errors = []
+
+        # inicializando o output com as libs
         self.output = ["#include <stdio.h>\n", "#include <stdlib.h>\n"]
 
     def visitPrograma(self, ctx: LA.ProgramaContext):
@@ -76,6 +78,8 @@ class LASemantico(LAVisitor):
                 return result
 
             c = ctx.getChild(i)
+
+            # Definindo a main
             if str(c) == "algoritmo":
                 self.output.append("int main(){\n")
             if str(c) == "fim_algoritmo":
@@ -125,6 +129,8 @@ class LASemantico(LAVisitor):
         # Descobrir o tipo da saída e inserir na tabela, substituindo o Void.
         # HACK Copiamos a função para o escopo externo *e* o escopo interno.
         simbolo = ctx.IDENT().getText()
+        
+        # Definindo o tipo da função
         saida = Void()
         if tipo_estendido := ctx.tipo_estendido():
             saida = TRes.walk_tipo_estendido(self.tss[-1], tipo_estendido)
@@ -133,20 +139,21 @@ class LASemantico(LAVisitor):
         self.tss[-1].inserir_variavel(simbolo, Função(entrada, saida))
         self.scope.append(Função(entrada, saida))
 
+        # Escrevendo a assinatura da função
         self.output.append(f"{saida.c_declar()} {simbolo}({parametros_str[:-1]}){{")
 
         # Visitar o corpo.
         out = super().visitDeclaracao_global(ctx)
 
+        # Fechando a função
         self.output.append("}")
+        
         # Desempilhar a tabela do escopo interno.
         self.tss.pop()
         self.scope.pop()
         return out
-
     def visitDeclaracao_local(self, ctx: LA.Declaracao_localContext):
         if variavel := ctx.variavel():
-            # TODO walk_variavel?
             # Resolver o tipo da variável.
             tipo = Void()
             try:
@@ -154,6 +161,7 @@ class LASemantico(LAVisitor):
             except TRes.TypeResolutionError as e:
                 self.errors.append(str(e))
             # Popular a tabela com os identificadores declarados.
+            
             for identificador in variavel.identificador():
                 try:
                     tipo_bw = None
@@ -165,12 +173,14 @@ class LASemantico(LAVisitor):
                     simbolo = identificador.IDENT()[0].getText()
                     if not self.tss[-1].ocupado(simbolo):
                         self.tss[-1].inserir_variavel(simbolo, tipo_bw)
+                        # Tratando as declarações
                         if is_literal(tipo_bw):
                             self.output.append(f"{tipo_bw.c_declar()} {simbolo}[80];\n")
                         elif is_vetor(tipo_bw):
                             self.output.append(f"{tipo_bw.c_declar()} {simbolo}[{tipo_bw.tamanho}];\n")
                         elif not is_registro(tipo_bw):
                             self.output.append(f"{tipo_bw.c_declar()} {simbolo};\n")
+                        
                     else:
                         line = identificador.IDENT()[0].symbol.line
                         self.errors.append(f'Linha {line}: identificador '
@@ -190,6 +200,7 @@ class LASemantico(LAVisitor):
                                     'declarado anteriormente')
             try:
                 chk_atribuicao_escalar(line, simbolo, tipo_lhs, tipo_rhs)
+                # Escrevendo a constante global
                 self.output.append(f"const {tipo_rhs.c_declar()} {simbolo} = {ctx.valor_constante().getText()};\n")
             except LAtrError as e:
                 self.errors.append(str(e))
@@ -207,8 +218,8 @@ class LASemantico(LAVisitor):
 
     def visitCmdSe(self, ctx: LA.CmdSeContext):
         try:
-            # TODO precisa ser lógico? talvez?
             expressao = ctx.expressao() 
+            # Escrevendo a condicional
             self.output.append(f"if ({regularized_expression(expressao)}){{\n")
             Expr.walk_expressao(self.tss[-1], expressao)
         except Expr.ExpressionTypeError as e:
@@ -220,6 +231,8 @@ class LASemantico(LAVisitor):
             if not self.shouldVisitNextChild(ctx, walk):
                 break
             c = ctx.getChild(i)
+
+            # Caso tenha um senao, nós fazemos o else
             if str(c) == 'senao':
                 self.output.append("}else{\n")
             childResult = c.accept(self)
@@ -236,9 +249,12 @@ class LASemantico(LAVisitor):
                 Expr.walk_exp_aritmetica(self.tss[-1], exp_aritmetica)
             except Expr.ExpressionTypeError as e:
                 self.errors.append(str(e))
+        
+        # Criação do for em c
         res = f"for({ctx.IDENT()} = {exps[0].getText()};"
         res += f"{ctx.IDENT()} <= {exps[1].getText()};"
         res += f"{ctx.IDENT()}++){{"
+
         self.output.append(res)
         walk = super().visitCmdPara(ctx)
         self.output.append("}")
@@ -249,6 +265,7 @@ class LASemantico(LAVisitor):
             Expr.walk_expressao(self.tss[-1], ctx.expressao())
         except Expr.ExpressionTypeError as e:
             self.errors.append(str(e))
+        # Criando o DO WHILE
         self.output.append("do{")
         walk = super().visitCmdFaca(ctx)
         self.output.append(f"}}while({regularized_expression(ctx.expressao())});")
@@ -262,8 +279,10 @@ class LASemantico(LAVisitor):
             str_id = ctx.identificador().getText()
             if ctx.getText()[0] == "^":
                 str_id = "*" + str_id
+            # Workaround da atribuição de literal
             if is_literal(tipo):
                 self.output.append(f"strcpy({str_id},{espressao.getText()});")
+            # Atribuição padrão
             else:
                 self.output.append(f"{str_id} = {espressao.getText()};")
         except Expr.ExpressionTypeError:
@@ -281,6 +300,7 @@ class LASemantico(LAVisitor):
             Expr.walk_expressao(self.tss[-1], exp)
         except Expr.ExpressionTypeError as e:
             self.errors.append(str(e))
+        # Escrevendo o while
         self.output.append(f"while({regularized_expression(exp)}){{")
         walk = super().visitCmdEnquanto(ctx)
         self.output.append("}")
@@ -293,10 +313,12 @@ class LASemantico(LAVisitor):
             except Expr.ExpressionTypeError as e:
                 self.errors.append(str(e))
 
+        # Organizando os argumentos
         p = ""
         for i in ctx.expressao():
             p += regularized_expression(i) + ';'
 
+        # Escrevendo a chamada da função
         self.output.append(f"{ctx.IDENT()}({p[:-1]});")
 
         return super().visitCmdChamada(ctx)
@@ -311,6 +333,7 @@ class LASemantico(LAVisitor):
             elif self.scope[-1].saída != tipo:
                 self.errors.append(f'Linha {ctx.start.line}: tipo de retorno invalido')
             else:
+                # Escrevendo o return, caso não haja erros
                 self.output.append(f"return {regularized_expression(ctx.expressao())};")
         except Expr.ExpressionTypeError as e:
             self.errors.append(str(e))
@@ -320,6 +343,8 @@ class LASemantico(LAVisitor):
         for identificador in ctx.identificador():
             try:
                 out = Expr.walk_identificador(self.tss[-1], identificador)
+                
+                # Tratando a representação % no scanf
                 if is_inteiro(out):
                     scanType = "d" 
                 elif is_literal(out):
@@ -337,12 +362,14 @@ class LASemantico(LAVisitor):
             try:
                 out = Expr.walk_expressao(self.tss[-1], expressao)
                 print_type = None
+                # Tratando a representação % do printf
                 if is_inteiro(out):
                     print_type = "d"
                 elif is_real(out):
                     print_type = "f"
                 elif is_literal(out):
                     print_type = "s"
+
                 if print_type:
                     self.output.append(f"printf(\"%{print_type}\",{expressao.getText()});")
                 else:
@@ -353,6 +380,7 @@ class LASemantico(LAVisitor):
         return super().visitCmdEscreva(ctx)
 
     def visitCmdCaso(self, ctx: LA.CmdCasoContext):
+        # Iniciando o switch
         self.output.append(f"switch ({ctx.exp_aritmetica().getText()}){{\n")
         walk = self.defaultResult()
 
@@ -362,6 +390,7 @@ class LASemantico(LAVisitor):
                 break
 
             c = ctx.getChild(i)
+            # Fazendo o case default
             if str(c) == "senao":
                 self.output.append("default:")
 
@@ -373,11 +402,13 @@ class LASemantico(LAVisitor):
 
     def visitItem_selecao(self, ctx: LA.Item_selecaoContext):
         for j in ctx.constantes().numero_intervalo():
+            # Tratando o range
             if len(j.NUM_INT()) > 1:
                 a, b = map(int, j.getText().split(".."))
                 for i in range(a,b+1):
                     self.output.append(f"case {i}:\n")
             else:
+                # case const
                 self.output.append(f"case {j.getText()}:\n")
         walk = super().visitItem_selecao(ctx)
         self.output.append(f"break;\n")
@@ -393,6 +424,7 @@ class LASemantico(LAVisitor):
                     self.output.append(f"{tipo.c_declar()} {i.getText()}[80];")
                 else:
                     self.output.append(f"{tipo.c_declar()} {i.getText()};")
-        # TODO
-        self.output.append("}reg;")
+        # nome = ctx.parentCtx.parentCtx.IDENT()
+        self.output.append(f"}}reg;")
+                
         return walk
