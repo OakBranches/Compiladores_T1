@@ -13,7 +13,7 @@ dimensao: ('[' exp_aritmetica ']')*;
 // Literais
 // Chamados aqui de "valores constantes".
 CADEIA: '"' ( ESC_SEQ | ~('"' | '\\' | '\n') )* '"';
-fragment ESC_SEQ: '\\"';
+fragment ESC_SEQ: '\\"' | '\\n';
 NUM_INT: /*('+' | '-')?*/ ('0'..'9')+;
 NUM_REAL: /*('+' | '-')?*/ ('0'..'9')+ ('.' ('0'..'9')+)?;
 valor_constante: CADEIA | NUM_INT | NUM_REAL | 'verdadeiro' | 'falso';

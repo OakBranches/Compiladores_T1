@@ -34,7 +34,7 @@ pip install -r requirements.txt
 Obtenha o Antlr4 de alguma fonte. Note que o ambiente já existe. O comando
 abaixo vai gerar o mesmo ambiente novamente.
 
-# Como gerar o ambiente
+# Como gerar o ambiente (dentro de T1)
 ```bash
 antlr4 -Dlanguage=Python3 -no-listener -visitor LA.g4
 ```

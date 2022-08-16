@@ -10,14 +10,16 @@ from dataclasses import dataclass
 # - Ponteiros são iguais se os tipos onde eles apontam são iguais.
 # - Funções são iguais se suas entradas e saídas são iguais.
 class Tipo:
-    pass
+    def c_declar(self):
+        return "__tipo__"
 
 # O tipo 'Literal' representa uma cadeia de caracteres.
 # NOTA: Não confundir com a definição popular de 'literal', de um valor de algum
 # tipo expresso diretamente no código fonte.
 @dataclass
 class Literal(Tipo):
-    pass
+    def c_declar(self):
+        return "char"
 
 def is_literal(t):
     return isinstance(t, Literal)
@@ -31,6 +33,9 @@ class Inteiro(Tipo):
     def __eq__(self, lhs):
         return type(self) == type(lhs)
 
+    def c_declar(self):
+        return "int"
+
 def is_inteiro(t):
     return isinstance(t, Inteiro)
 
@@ -42,6 +47,9 @@ class Real(Tipo):
 
     def __eq__(self, lhs):
         return type(self) == type(lhs)
+        
+    def c_declar(self):
+        return "float"
 
 def is_real(t):
     return isinstance(t, Real)
@@ -65,6 +73,8 @@ def is_lógico(t):
 @dataclass
 class Ponteiro(Tipo):
     interno: Tipo
+    def c_declar(self):
+        return self.interno.c_declar()+"*"
 
 def is_ponteiro(t):
     return isinstance(t, Ponteiro)
@@ -80,6 +90,9 @@ class Vetor(Tipo):
 
     def __eq__(self, lhs):
         return isinstance(lhs, Vetor) and self.interno == lhs.interno
+
+    def c_declar(self):
+        return self.interno.c_declar()
 
 def is_vetor(t):
     return isinstance(t, Vetor)
@@ -105,7 +118,8 @@ def is_função(t):
 # O tipo Void é o tipo sem valor. É um erro semântico atribuí-lo.
 @dataclass
 class Void(Tipo):
-    pass
+    def c_declar(self):
+        return "void"
 
 def is_void(t):
     return isinstance(t, Void)

@@ -61,8 +61,11 @@ def main(argv):
         visitor.visitPrograma(parser.programa())
         print(visitor.tss)
         # Reporta erros.
-        outfile.write('\n'.join(visitor.errors))
-        outfile.write('\nFim da compilacao\n')
+        if len(visitor.errors) > 0:
+            outfile.write('\n'.join(visitor.errors))
+            outfile.write('\nFim da compilacao\n')
+        else:
+            outfile.write('\n'.join(visitor.output))
     except ParserError as e:
         # Reporta o erro no arquivo.
         outfile.write(str(e))
