@@ -169,8 +169,18 @@ class LAVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by LAParser#padrao.
+    def visitPadrao(self, ctx:LAParser.PadraoContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by LAParser#cmdCaso.
     def visitCmdCaso(self, ctx:LAParser.CmdCasoContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by LAParser#senao.
+    def visitSenao(self, ctx:LAParser.SenaoContext):
         return self.visitChildren(ctx)
 
 

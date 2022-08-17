@@ -11,7 +11,7 @@ class ExpressionTypeError(Exception):
 
 # As funções chk_* verificam a aplicação de uma classe de operações a um tipo.
 
-def chk_arith(ta: Tipo, op: str, tb: Tipo) -> Tipo:
+def chk_arith(ta: Tipo, op, tb: Tipo) -> Tipo:
     if op.getText() == '+':
         if is_inteiro(ta) and is_inteiro(tb):
             if ta.valor and tb.valor:
@@ -84,7 +84,7 @@ def chk_neg(t: Tipo) -> Tipo:
     else:
         raise ExpressionTypeError
 
-def chk_rel(ta: Tipo, op: str, tb: Tipo) -> Tipo:
+def chk_rel(ta: Tipo, op, tb: Tipo) -> Tipo:
     if is_aritmético(ta) and is_aritmético(tb):
         return Lógico()
     elif op.getText() in ['=', '<>'] and ta == tb:
