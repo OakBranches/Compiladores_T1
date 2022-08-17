@@ -13,7 +13,7 @@ dimensao: ('[' exp_aritmetica ']')*;
 // Literais
 // Chamados aqui de "valores constantes".
 CADEIA: '"' ( ESC_SEQ | ~('"' | '\\' | '\n') )* '"';
-fragment ESC_SEQ: '\\"';
+fragment ESC_SEQ: '\\"' | '\\n';
 NUM_INT: /*('+' | '-')?*/ ('0'..'9')+;
 NUM_REAL: /*('+' | '-')?*/ ('0'..'9')+ ('.' ('0'..'9')+)?;
 valor_constante: CADEIA | NUM_INT | NUM_REAL | 'verdadeiro' | 'falso';
@@ -55,10 +55,12 @@ numero_intervalo: op_unario? NUM_INT ( '..' op_unario? NUM_INT)?;
 constantes: numero_intervalo (',' numero_intervalo)*;
 item_selecao: constantes ':' cmd*;
 selecao: item_selecao*;
-cmdCaso: 'caso' exp_aritmetica 'seja' selecao ('senao' cmd*)? 'fim_caso';
+padrao: 'senao' cmd*;
+cmdCaso: 'caso' exp_aritmetica 'seja' selecao padrao? 'fim_caso';
 
 // Comandos
-cmdSe: 'se' expressao 'entao' cmd* ('senao' cmd*)? 'fim_se';
+senao: 'senao' cmd*;
+cmdSe: 'se' expressao 'entao' cmd* senao? 'fim_se';
 cmdPara: 'para' IDENT '<-' exp_aritmetica 'ate' exp_aritmetica 'faca' cmd* 'fim_para';
 cmdEnquanto: 'enquanto' expressao 'faca' cmd* 'fim_enquanto';
 cmdFaca: 'faca' cmd* 'ate' expressao;
